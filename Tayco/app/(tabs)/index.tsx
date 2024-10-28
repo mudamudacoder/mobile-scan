@@ -1,12 +1,14 @@
 import React from 'react';
-import { Image, StyleSheet, Platform, Pressable, View } from 'react-native';
-
+import { Image, StyleSheet } from 'react-native';
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
+// Use the standard openDatabase function
+
 export default function HomeScreen() {
+  
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -29,7 +31,6 @@ export default function HomeScreen() {
           Welcome to ALS (Automated Labelling System). Please use the designated
           in-built scanner to scan barcodes to start printing labels.
         </ThemedText>
-    
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -65,20 +66,6 @@ const styles = StyleSheet.create({
     color: '#34495E',
     marginBottom: 8,
     lineHeight: 22,
-  },
-  navigationText: {
-    fontSize: 16,
-    color: '#34495E',
-  },
-  pressable: {
-    marginLeft: 5,
-    backgroundColor: '#2980B9', // Color for the button
-    padding: 8,
-    borderRadius: 8,
-  },
-  navigationLinkText: {
-    color: '#FFFFFF', // Text color for the button
-    fontWeight: 'bold',
   },
   reactLogo: {
     height: 178,

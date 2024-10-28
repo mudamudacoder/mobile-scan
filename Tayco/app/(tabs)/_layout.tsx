@@ -32,6 +32,16 @@ export default function TabLayout() {
           ),
         }}
         />
-    </Tabs>
+    
+    <Tabs.Screen
+        name="Settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
+          ),
+        }}
+        />
+        </Tabs>
   );
 }
