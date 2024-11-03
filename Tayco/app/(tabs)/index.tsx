@@ -5,13 +5,10 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
-// Use the standard openDatabase function
-
 export default function HomeScreen() {
-  
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerBackgroundColor={{ light: '#FF9800', dark: '#333333' }}
       headerImage={
         <Image
           source={require('@/assets/images/partial-react-logo.png')}
@@ -21,7 +18,7 @@ export default function HomeScreen() {
     >
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title" style={styles.titleText}>
-          TayCo!
+          Tayco!
         </ThemedText>
         <HelloWave />
       </ThemedView>
@@ -47,23 +44,23 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: '#FF9800', // Orange color for title
   },
   descriptionContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#F5F5F5', // Light gray background
     borderRadius: 12,
     marginBottom: 20,
-    elevation: 2, // For Android shadow effect
-    shadowColor: '#000', // iOS shadow color
-    shadowOffset: { width: 0, height: 1 }, // iOS shadow offset
-    shadowOpacity: 0.2, // iOS shadow opacity
-    shadowRadius: 1.5, // iOS shadow radius
+    elevation: 3, // Android shadow effect
+    shadowColor: '#888', // Gray shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
   },
   welcomeText: {
     fontSize: 16,
-    color: '#34495E',
+    color: '#333333', // Dark gray for text
     marginBottom: 8,
     lineHeight: 22,
   },
@@ -73,5 +70,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+    tintColor: '#FF9800', // Orange tint for the logo
   },
 });

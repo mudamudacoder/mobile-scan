@@ -47,11 +47,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: 'orange',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -61,26 +62,26 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 18,
     marginBottom: 8,
+    color: 'gray',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: 'gray',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
-    color: '#000'
-    
+    color: 'gray',
   },
   copyButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: 'orange',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: 'gray',
     borderRadius: 8,
   },
   picker: {
@@ -88,14 +89,15 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   pdfButton: {
-    backgroundColor: '#28A745',
+    backgroundColor: 'orange',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
 });
+

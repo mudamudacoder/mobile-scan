@@ -213,27 +213,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF', // White background
   },
   manualEntryButton: {
     marginBottom: 20,
     padding: 10,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFA500', // Orange background for buttons
     borderRadius: 5,
     alignSelf: 'center',
   },
   manualEntryText: {
-    color: 'white',
+    color: '#FFFFFF', // White text
     fontWeight: 'bold',
   },
   message: {
     textAlign: 'center',
     paddingBottom: 10,
+    color: '#808080', // Gray text for messages
   },
   input: {
     borderWidth: 1,
+    borderColor: '#808080', // Gray border
     padding: 8,
     marginBottom: 16,
     width: '100%',
+    backgroundColor: '#FFFFFF', // White background for input
+    color: '#808080', // Gray text
   },
   camera: {
     flex: 1,
@@ -252,19 +257,16 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#FFFFFF', // White text
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF', // White modal background
     borderRadius: 20,
     padding: 35,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowColor: '#808080', // Gray shadow
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
@@ -273,35 +275,38 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
     fontSize: 18,
+    color: '#808080', // Gray text
   },
   searchButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FFA500', // Orange button background
     padding: 10,
     borderRadius: 5,
   },
   searchText: {
-    color: 'white',
+    color: '#FFFFFF', // White text
     textAlign: 'center',
   },
   tableRow: {
     marginVertical: 8,
     paddingHorizontal: 16,
+    backgroundColor: '#F0F0F0', // Light gray background for table rows
   },
   printButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFA500', // Orange button background
     borderRadius: 10,
     padding: 10,
     marginVertical: 10,
   },
   closeButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#808080', // Gray button background for close button
     borderRadius: 10,
     padding: 10,
     marginVertical: 10,
   },
   closeText: {
-    color: 'white',
+    color: '#FFFFFF', // White text
     fontWeight: 'bold',
     textAlign: 'center',
   },
 });
+
