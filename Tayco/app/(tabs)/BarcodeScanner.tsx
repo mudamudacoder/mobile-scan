@@ -8,9 +8,11 @@ export default function BarcodeScanner() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [scannedData, setScannedData] = useState<string>(''); 
-  const [manualBarcode, setManualBarcode] = useState<string>(''); // State for manual barcode entry
+  const [orderNr, setOrderNr] = useState<string>('');
+  const [itemNr, setItemNr] = useState<string>('');
   const [productData, setProductData] = useState<any[]>([]);
+  const [foundFlag, setFoundFlag] = useState<boolean>(false);
+  const [scannedData, setScannedData] = useState<string>('');
 
   // Request camera permission
   useEffect(() => {
@@ -22,27 +24,37 @@ export default function BarcodeScanner() {
   // Fetch product data from the API
   const fetchProductData = async (barcode: string) => {
     try {
-      const response = await axios.get(`https://mob-scan-backend.vercel.app/api/products/${barcode}`);
+      const response = await axios.get(`https://mob-scan-backend1.vercel.app/api/orders/${barcode}`);
       if (response.data) {
         setProductData([response.data]); // Store the fetched product in an array
         setModalVisible(true); // Open the modal to show the product data
+        setFoundFlag(false);
       }
     } catch (error) {
       console.error('Error fetching product:', error);
+      if (!foundFlag){
       alert('Product not found or an error occurred.');
+      setFoundFlag(true);
+      }
     }
   };
 
   // Handle scanned barcode data
   const handleBarCodeScanned = (data: string) => {
+    if (data !== scannedData) {
     setScannedData(data);
+    setFoundFlag(false);
     fetchProductData(data); // Fetch product by the scanned barcode
+    }
   };
 
   // Handle manual barcode input
   const handleManualBarcodeSearch = () => {
-    if (manualBarcode) {
-      fetchProductData(manualBarcode); // Fetch product by the manually entered barcode
+    if (orderNr && itemNr) {
+      const combinedBarcode = `${orderNr}|${itemNr}`;
+      fetchProductData(combinedBarcode); // Fetch product by the manually entered barcode
+    } else {
+      alert("Please enter both Order Number and Item number.");
     }
   };
 
@@ -63,12 +75,15 @@ export default function BarcodeScanner() {
               width: 300px;
               margin: 0 auto;
             }
-            .order {
-              font-size: 18px;
+            .order-number {
+              font-size: 20px;
               font-weight: bold;
+              color: red;
             }
-            .item {
+            .item-number {
               font-size: 16px;
+              font-weight: bold;
+              color: navy;
               margin-top: 8px;
             }
             .description {
@@ -76,13 +91,25 @@ export default function BarcodeScanner() {
               color: #555;
               margin: 10px 0;
             }
-            .quantity {
-              font-size: 14px;
+            .small-text {
+              font-size: 12px;
+              color: gray;
+              font-style: italic;
             }
-            .box-count {
-              font-size: 36px;
+            .pick-area {
+              font-size: 12px;
+              color: teal;
               font-weight: bold;
-              text-align: right;
+            }
+            .quantity {
+              font-size: 24px;
+              font-weight: bold;
+              color: green;
+              text-align: center;
+            }
+            .plant-date {
+              font-size: 12px;
+              color: gray;
             }
             .barcode {
               margin-top: 15px;
@@ -97,13 +124,15 @@ export default function BarcodeScanner() {
           <div class="container">
             ${productData.map(
               (product) => `
-              <div class="order">ORDER # ${product.productCode || "000000"}</div>
-              <div class="item">ITEM # ${product.barCode || "X-ABCD-000000X"}</div>
-              <div class="description">${product.description || "Description not available"}</div>
-              <div class="quantity">122/999</div>
-              <div class="box-count">344 Boxes</div>
+              <div class="order-number">ORDER # ${product.orderNr || "000000"}</div>
+              <div class="item-number">ITEM # ${product.itemNumber || "X-ABCD-000000X"}</div>
+              <div class="description">${product.itemDescription || "Description not available"}</div>
+              <div class="small-text">${product.smallText || "Small text here"}</div>
+              <div class="pick-area">Pick Area: ${product.pickAreaName || "N/A"}</div>
+              <div class="plant-date">Plant Date: ${product.plantDate || "Unknown"}</div>
+              <div class="quantity">${product.quantity || "0"} QTY</div>
               <div class="barcode">
-                <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${product.barCode || product.productCode}&scale=2&includetext" alt="Barcode">
+                <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${product.orderNr || "000000"}|${product.itemNumber || "000000"}&scale=2&includetext" alt="Barcode">
               </div>
             `).join('')}
           </div>
@@ -115,6 +144,7 @@ export default function BarcodeScanner() {
       html: htmlLabel,
     });
   };
+
   
   
 
@@ -155,7 +185,7 @@ export default function BarcodeScanner() {
         style={styles.manualEntryButton}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={styles.manualEntryText}>Enter Barcode Manually</Text>
+        <Text style={styles.manualEntryText}>Manual Lookup</Text>
       </TouchableOpacity>
 
       {/* Modal for manual barcode input */}
@@ -166,12 +196,18 @@ export default function BarcodeScanner() {
         onRequestClose={() => setModalVisible(!modalVisible)}
       >
         <View style={styles.modalView}>
-          <Text style={styles.modalText}>Enter Barcode Manually:</Text>
+          <Text style={styles.modalText}>Enter Order Number and Item Number:</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter Barcode"
-            value={manualBarcode}
-            onChangeText={setManualBarcode}
+            placeholder="Order Number"
+            value={orderNr}
+            onChangeText={setOrderNr}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Item Number"
+            value={itemNr}
+            onChangeText={setItemNr}
           />
           <TouchableOpacity
             style={styles.searchButton}
@@ -182,13 +218,16 @@ export default function BarcodeScanner() {
 
           <FlatList
             data={productData}
-            keyExtractor={(item) => item.productCode} // Assuming productCode is unique
+            keyExtractor={(item) => item.orderNr} // Assuming productCode is unique
             renderItem={({ item }) => (
               <View style={styles.tableRow}>
-                <Text>Product Code: {item.productCode}</Text>
-                <Text>Product Name: {item.name}</Text>
-                <Text>Barcode: {item.barCode}</Text>
-                <Text>Description: {item.description}</Text>
+                <Text>Order Number: {item.orderNr}</Text>
+                <Text>Plant Date: {item.plantDate}</Text>
+                <Text>Item Number: {item.itemNumber}</Text>
+                <Text>Quantity: {item.quantity}</Text>
+                <Text>Description: {item.itemDescription}</Text>
+                <Text>Small Text: {item.smallText}</Text>
+                <Text>Pick Area: {item.pickAreaName}</Text>
               </View>
             )}
           />
