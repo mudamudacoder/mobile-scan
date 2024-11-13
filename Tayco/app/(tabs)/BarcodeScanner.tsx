@@ -13,6 +13,8 @@ export default function BarcodeScanner() {
   const [productData, setProductData] = useState<any[]>([]);
   const [foundFlag, setFoundFlag] = useState<boolean>(false);
   const [scannedData, setScannedData] = useState<string>('');
+  const [currentQuantity, setCurrentQuantity] = useState(0);
+  const [totalQuantity, setTotalQuantity] = useState(0);
 
   // Request camera permission
   useEffect(() => {
@@ -27,6 +29,8 @@ export default function BarcodeScanner() {
       const response = await axios.get(`https://mob-scan-backend1.vercel.app/api/orders/${barcode}`);
       if (response.data) {
         setProductData([response.data]); // Store the fetched product in an array
+        setTotalQuantity(response.data.quantity || 0);
+        setCurrentQuantity(1);
         setModalVisible(true); // Open the modal to show the product data
         setFoundFlag(false);
       }
@@ -58,6 +62,15 @@ export default function BarcodeScanner() {
     }
   };
 
+  const incrementQuantity = () => {
+    if (currentQuantity < totalQuantity) {
+      setCurrentQuantity(currentQuantity + 1);
+    } else {
+      alert("All items have been scanned. Last number will be printed.");
+      setCurrentQuantity(totalQuantity);
+    }
+  };
+
   // Function to print the table data
   const printTableData = async () => {
     const htmlLabel = `
@@ -66,19 +79,28 @@ export default function BarcodeScanner() {
           <style>
             body {
               font-family: Arial, sans-serif;
-              padding: 20px;
-              text-align: left;
+              padding: 10px;
+              margin: 0;
+              width: 5in;
+              height: 3in;
             }
             .container {
               border: 2px solid #333;
               padding: 15px;
-              width: 300px;
-              margin: 0 auto;
+              width: 100%;
+              box-sizing: border-box;
             }
             .order-number {
-              font-size: 20px;
+              font-size: 18px;
               font-weight: bold;
               color: red;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            }
+            .order-number .barcode-img {
+              width: 55%; /* Adjust as needed */
+              margin-left: 10px;
             }
             .item-number {
               font-size: 16px;
@@ -111,29 +133,29 @@ export default function BarcodeScanner() {
               font-size: 12px;
               color: gray;
             }
-            .barcode {
-              margin-top: 15px;
-              text-align: center;
+            img {
+              width: 100%; /* Ensures barcode fits well in container */
+              padding-top: 10px;
             }
-            .barcode img {
-              width: 100%;
-            }
+              .quan {
+                color: black;
+              }
           </style>
         </head>
         <body>
           <div class="container">
             ${productData.map(
               (product) => `
-              <div class="order-number">ORDER # ${product.orderNr || "000000"}</div>
+              <div class="order-number">
+                ORDER # ${product.orderNr || "000000"}
+                <img class="barcode-img" src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${product.orderNr || "000000"}|${product.itemNumber || "000000"}&scale=2&includetext" alt="Barcode">
+              </div>
               <div class="item-number">ITEM # ${product.itemNumber || "X-ABCD-000000X"}</div>
               <div class="description">${product.itemDescription || "Description not available"}</div>
-              <div class="small-text">${product.smallText || "Small text here"}</div>
-              <div class="pick-area">Pick Area: ${product.pickAreaName || "N/A"}</div>
+              <div class="small-text">${product.smallText || "Small text here"} - <span class="pick-area">${product.pickAreaName || "N/A"}</span></div>
+              
               <div class="plant-date">Plant Date: ${product.plantDate || "Unknown"}</div>
-              <div class="quantity">${product.quantity || "0"} QTY</div>
-              <div class="barcode">
-                <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${product.orderNr || "000000"}|${product.itemNumber || "000000"}&scale=2&includetext" alt="Barcode">
-              </div>
+              <div class="quantity">${currentQuantity}<span class="quan">/</span>${totalQuantity} QTY BOXES</div>
             `).join('')}
           </div>
         </body>
@@ -144,6 +166,7 @@ export default function BarcodeScanner() {
       html: htmlLabel,
     });
   };
+  
 
   
   
@@ -232,7 +255,7 @@ export default function BarcodeScanner() {
             )}
           />
 
-          <TouchableOpacity style={styles.printButton} onPress={printTableData}>
+          <TouchableOpacity style={styles.printButton} onPress={() => {incrementQuantity(); printTableData();}}>
             <Text style={styles.closeText}>Print Table</Text>
           </TouchableOpacity>
 
