@@ -11,7 +11,7 @@ export default function HomeScreen() {
       headerBackgroundColor={{ light: '#FF9800', dark: '#333333' }}
       headerImage={
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
+          source={require('@/assets/images/shipping.jpg')}
           style={styles.reactLogo}
         />
       }
@@ -65,11 +65,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
+    height: 300,
+    width: '100%',
+    top: 0,
     left: 0,
     position: 'absolute',
-    tintColor: '#FF9800', // Orange tint for the logo
   },
 });

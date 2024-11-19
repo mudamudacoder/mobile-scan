@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Button, Modal, StyleSheet, Text, TouchableOpacity, View, FlatList, TextInput } from 'react-native';
 import * as Print from 'expo-print';
@@ -15,6 +15,7 @@ export default function BarcodeScanner() {
   const [scannedData, setScannedData] = useState<string>('');
   const [currentQuantity, setCurrentQuantity] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
+  const [manualLabelNumber, setManualLabelNumber] = useState<string>('');
 
   // Request camera permission
   useEffect(() => {
@@ -22,6 +23,10 @@ export default function BarcodeScanner() {
       requestPermission();
     }
   }, [permission]);
+
+  useLayoutEffect(() => {
+    console.log("Current Quantity Updated:", currentQuantity);
+  }, [currentQuantity]);
 
   // Fetch product data from the API
   const fetchProductData = async (barcode: string) => {
@@ -63,16 +68,35 @@ export default function BarcodeScanner() {
   };
 
   const incrementQuantity = () => {
-    if (currentQuantity < totalQuantity) {
-      setCurrentQuantity(currentQuantity + 1);
+
+    console.log("Manual Label Number:", manualLabelNumber);
+  console.log("Current Quantity Before:", currentQuantity);
+    if (manualLabelNumber) {
+      console.log('this is running');
+      const parsedNumber = parseInt(manualLabelNumber, 10);
+  
+      // Validation: Ensure manual input is a valid number within range
+      if (isNaN(parsedNumber) || parsedNumber < 1 || parsedNumber > totalQuantity) {
+        alert(`Invalid label number. Enter a number between 1 and ${totalQuantity}.`);
+        setManualLabelNumber(''); // Reset manual input
+        return; // Stop further execution
+      }
+  
+      // Update current quantity to manual input
+      setCurrentQuantity(parseInt(manualLabelNumber)); 
+      setManualLabelNumber(''); // Clear manual input
+      return; // Exit to prevent auto-increment logic from running
+    } else if (currentQuantity < totalQuantity){
+      setCurrentQuantity((prev) => prev + 1);
     } else {
-      alert("All items have been scanned. Last number will be printed.");
-      setCurrentQuantity(totalQuantity);
+      alert('All items scanned.');
     }
   };
-
+  
+  
   // Function to print the table data
   const printTableData = async () => {
+
     const htmlLabel = `
       <html>
         <head>
@@ -167,6 +191,10 @@ export default function BarcodeScanner() {
     });
   };
   
+  const handlePrint = () => {
+    incrementQuantity();
+    printTableData();
+  }
 
   
   
@@ -239,6 +267,14 @@ export default function BarcodeScanner() {
             <Text style={styles.searchText}>Search</Text>
           </TouchableOpacity>
 
+          <TextInput
+            style={styles.input}
+            placeholder='Manual Label #'
+            value={manualLabelNumber}
+            onChangeText={setManualLabelNumber}
+            keyboardType='numeric'
+          />
+
           <FlatList
             data={productData}
             keyExtractor={(item) => item.orderNr} // Assuming productCode is unique
@@ -255,7 +291,7 @@ export default function BarcodeScanner() {
             )}
           />
 
-          <TouchableOpacity style={styles.printButton} onPress={() => {incrementQuantity(); printTableData();}}>
+          <TouchableOpacity style={styles.printButton} onPress={() => {handlePrint()}}>
             <Text style={styles.closeText}>Print Table</Text>
           </TouchableOpacity>
 
