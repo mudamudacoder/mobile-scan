@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Button, Modal, StyleSheet, Text, TouchableOpacity, View, FlatList, TextInput } from 'react-native';
+import { Button, Modal, StyleSheet, Text, TouchableOpacity, View, FlatList, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import * as Print from 'expo-print';
 import axios from 'axios'; // Ensure axios is installed
 
@@ -15,7 +15,11 @@ export default function BarcodeScanner() {
   const [scannedData, setScannedData] = useState<string>('');
   const [currentQuantity, setCurrentQuantity] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
-  const [manualLabelNumber, setManualLabelNumber] = useState<string>('');
+  const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
+  const [itemClickCounts, setItemClickCounts] = useState<number[]>([]);
+  const [scannedCounts, setScannedCounts] = useState<{ [key: string]: number }>({});
+
+
 
   // Request camera permission
   useEffect(() => {
@@ -33,17 +37,20 @@ export default function BarcodeScanner() {
     try {
       const response = await axios.get(`https://mob-scan-backend1.vercel.app/api/orders/${barcode}`);
       if (response.data) {
-        setProductData([response.data]); // Store the fetched product in an array
-        setTotalQuantity(response.data.quantity || 0);
-        setCurrentQuantity(1);
-        setModalVisible(true); // Open the modal to show the product data
+        setProductData([response.data]);
         setFoundFlag(false);
+        setOrderNr(barcode.split('|')[0]);
+        const currentCount = scannedCounts[barcode] || 0;
+        setTotalQuantity(response.data.quantity || 0);
+        setCurrentQuantity(currentCount + 1);
+        setModalVisible(true);  // Show modal to select product
+        
       }
     } catch (error) {
       console.error('Error fetching product:', error);
-      if (!foundFlag){
-      alert('Product not found or an error occurred.');
-      setFoundFlag(true);
+      if (!foundFlag) {
+        alert(`Product not found or an error occurred: ${error}`);
+        setFoundFlag(true);
       }
     }
   };
@@ -58,45 +65,48 @@ export default function BarcodeScanner() {
   };
 
   // Handle manual barcode input
-  const handleManualBarcodeSearch = () => {
-    if (orderNr && itemNr) {
-      const combinedBarcode = `${orderNr}|${itemNr}`;
-      fetchProductData(combinedBarcode); // Fetch product by the manually entered barcode
-    } else {
-      alert("Please enter both Order Number and Item number.");
-    }
-  };
-
-  const incrementQuantity = () => {
-
-    console.log("Manual Label Number:", manualLabelNumber);
-  console.log("Current Quantity Before:", currentQuantity);
-    if (manualLabelNumber) {
-      console.log('this is running');
-      const parsedNumber = parseInt(manualLabelNumber, 10);
-  
-      // Validation: Ensure manual input is a valid number within range
-      if (isNaN(parsedNumber) || parsedNumber < 1 || parsedNumber > totalQuantity) {
-        alert(`Invalid label number. Enter a number between 1 and ${totalQuantity}.`);
-        setManualLabelNumber(''); // Reset manual input
-        return; // Stop further execution
+  // Inside the component
+// Adjust manual barcode input
+const handleManualBarcodeSearch = async () => {
+  if (orderNr) {
+    try {
+      const response = await axios.get(`https://mob-scan-backend1.vercel.app/api/order/${orderNr}`);
+      if (response.data && response.data.items) {
+        setProductData(response.data.items); // Store the list of items returned for the order
+        setModalVisible(true); // Show modal with item options
+      } else {
+        alert('No items found for this order number.');
       }
-  
-      // Update current quantity to manual input
-      setCurrentQuantity(parseInt(manualLabelNumber)); 
-      setManualLabelNumber(''); // Clear manual input
-      return; // Exit to prevent auto-increment logic from running
-    } else if (currentQuantity < totalQuantity){
-      setCurrentQuantity((prev) => prev + 1);
-    } else {
-      alert('All items scanned.');
+    } catch (error) {
+      console.error('Error fetching order data:', error);
+      alert('Failed to fetch data. Please check the order number and try again.');
     }
-  };
-  
-  
-  // Function to print the table data
-  const printTableData = async () => {
+  } else {
+    alert("Please enter the Order Number.");
+  }
+};
 
+const handleItemSelection = (item: any, index: number) => {
+  const totalQuantity = item.quantity || 0;
+    const currentCount = itemClickCounts[index] || 0;
+
+    if (currentCount < totalQuantity) {
+      // Increment click count for the selected item
+      const updatedCounts = [...itemClickCounts];
+      updatedCounts[index] = currentCount + 1;
+      setItemClickCounts(updatedCounts);
+
+      // Set the current item for printing
+      setCurrentItemIndex(index);
+        printTableData(item, currentCount + 1, totalQuantity); 
+      
+      // Pass updated count for printing
+    } else {
+      alert(`Item ${item.itemNumber} has already been scanned ${totalQuantity} times.`);
+    }
+};  
+  // Function to print the table data
+  const printTableData = async (product: any, currentQuantity: number, totalQuantity: number) => {
     const htmlLabel = `
       <html>
         <head>
@@ -123,7 +133,7 @@ export default function BarcodeScanner() {
               justify-content: space-between;
             }
             .order-number .barcode-img {
-              width: 55%; /* Adjust as needed */
+              width: 55%;
               margin-left: 10px;
             }
             .item-number {
@@ -158,29 +168,28 @@ export default function BarcodeScanner() {
               color: gray;
             }
             img {
-              width: 100%; /* Ensures barcode fits well in container */
+              width: 100%;
               padding-top: 10px;
             }
-              .quan {
-                color: black;
+            .quan {
+              color: black;
+            }
+              .boxes{
+                padding-left: 20px;
               }
           </style>
         </head>
         <body>
           <div class="container">
-            ${productData.map(
-              (product) => `
-              <div class="order-number">
-                ORDER # ${product.orderNr || "000000"}
-                <img class="barcode-img" src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${product.orderNr || "000000"}|${product.itemNumber || "000000"}&scale=2&includetext" alt="Barcode">
-              </div>
-              <div class="item-number">ITEM # ${product.itemNumber || "X-ABCD-000000X"}</div>
-              <div class="description">${product.itemDescription || "Description not available"}</div>
-              <div class="small-text">${product.smallText || "Small text here"} - <span class="pick-area">${product.pickAreaName || "N/A"}</span></div>
-              
-              <div class="plant-date">Plant Date: ${product.plantDate || "Unknown"}</div>
-              <div class="quantity">${currentQuantity}<span class="quan">/</span>${totalQuantity} QTY BOXES</div>
-            `).join('')}
+            <div class="order-number">
+              ORDER # ${orderNr || "000000"}
+              <img class="barcode-img" src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${orderNr || "000000"}|${product.itemNumber || "000000"}&scale=2&includetext" alt="Barcode">
+            </div>
+            <div class="item-number">ITEM # ${product.itemNumber || "X-ABCD-000000X"}</div>
+            <div class="description">${product.itemDescription || "Description not available"}</div>
+            <div class="small-text">${product.smallText || "Small text here"} - <span class="pick-area">${product.pickAreaName || "N/A"}</span></div>
+            <div class="plant-date">Plant Date: ${product.plantDate || "Unknown"}</div>
+            <div class="quantity">${currentQuantity}<span class="quan">/</span>${totalQuantity} QTY <span class="boxes">_____ / _____ BOXES</span></div>
           </div>
         </body>
       </html>
@@ -191,10 +200,10 @@ export default function BarcodeScanner() {
     });
   };
   
-  const handlePrint = () => {
-    incrementQuantity();
-    printTableData();
-  }
+  
+  // const handlePrint = () => {
+  //   incrementQuantity();
+  // }
 
   
   
@@ -216,6 +225,7 @@ export default function BarcodeScanner() {
     <View style={styles.container}>
       {/* Button to open manual input modal */}
       
+      
 
       {/* Camera for scanning */}
       <CameraView
@@ -232,77 +242,61 @@ export default function BarcodeScanner() {
           </TouchableOpacity>
         </View>
       </CameraView>
-      <TouchableOpacity
-        style={styles.manualEntryButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.manualEntryText}>Manual Lookup</Text>
-      </TouchableOpacity>
+      <View style={styles.manualEntryContainer}>
+  <TextInput
+    style={styles.input}
+    placeholder="Enter Order Number"
+    placeholderTextColor="#A9A9A9" // Light gray placeholder text
+    value={orderNr}
+    onChangeText={(text) => setOrderNr(text)}
+  />
+  <TouchableOpacity
+    style={styles.searchButton}
+    onPress={handleManualBarcodeSearch}
+  >
+    <Text style={styles.searchText}>Search by Order Number</Text>
+  </TouchableOpacity>
+</View>
 
       {/* Modal for manual barcode input */}
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(!modalVisible)}
-      >
-        <View style={styles.modalView}>
-          <Text style={styles.modalText}>Enter Order Number and Item Number:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Order Number"
-            value={orderNr}
-            onChangeText={setOrderNr}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Item Number"
-            value={itemNr}
-            onChangeText={setItemNr}
-          />
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={handleManualBarcodeSearch}
-          >
-            <Text style={styles.searchText}>Search</Text>
-          </TouchableOpacity>
+  animationType="slide"
+  transparent={false}
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(!modalVisible)}
+>
+  <View style={styles.modalView}>
+    <Text style={styles.modalText}>Select an Item:</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder='Manual Label #'
-            value={manualLabelNumber}
-            onChangeText={setManualLabelNumber}
-            keyboardType='numeric'
-          />
+    <FlatList
+  data={productData}
+  keyExtractor={(item, index) => `${item.itemNumber}_${index}`} // Ensure unique key by combining itemNumber with index
+  renderItem={({ item, index }) => (
+    <TouchableOpacity
+      style={styles.tableRow}
+      onPress={() => handleItemSelection(item, index)}
+    >
+      <Text>Item {index + 1}</Text>
+      <Text>Item Number: {item.itemNumber}</Text>
+      <Text>Description: {item.itemDescription}</Text>
+      <Text>Quantity: {item.quantity}</Text>
+    </TouchableOpacity>
+  )}
+/>
 
-          <FlatList
-            data={productData}
-            keyExtractor={(item) => item.orderNr} // Assuming productCode is unique
-            renderItem={({ item }) => (
-              <View style={styles.tableRow}>
-                <Text>Order Number: {item.orderNr}</Text>
-                <Text>Plant Date: {item.plantDate}</Text>
-                <Text>Item Number: {item.itemNumber}</Text>
-                <Text>Quantity: {item.quantity}</Text>
-                <Text>Description: {item.itemDescription}</Text>
-                <Text>Small Text: {item.smallText}</Text>
-                <Text>Pick Area: {item.pickAreaName}</Text>
-              </View>
-            )}
-          />
 
-          <TouchableOpacity style={styles.printButton} onPress={() => {handlePrint()}}>
-            <Text style={styles.closeText}>Print Table</Text>
-          </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.closeButton}
+      onPress={() => setModalVisible(!modalVisible)}
+    >
+      <Text style={styles.closeText}>Close</Text>
+    </TouchableOpacity>
+  </View>
+</Modal>
 
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setModalVisible(!modalVisible)}
-          >
-            <Text style={styles.closeText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+
+
+
     </View>
   );
 }
@@ -313,12 +307,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF', // White background
   },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#808080', // Gray border
+    padding: 8,
+    marginRight: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF', // White background
+    color: '#000000', // Black text
+  },
   manualEntryButton: {
     marginBottom: 20,
     padding: 10,
     backgroundColor: '#FFA500', // Orange background for buttons
     borderRadius: 5,
     alignSelf: 'center',
+  },
+  manualEntryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: '#F8F8F8', // Light background for the manual entry section
   },
   manualEntryText: {
     color: '#FFFFFF', // White text
@@ -329,15 +340,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     color: '#808080', // Gray text for messages
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#808080', // Gray border
-    padding: 8,
-    marginBottom: 16,
-    width: '100%',
-    backgroundColor: '#FFFFFF', // White background for input
-    color: '#808080', // Gray text
-  },
+  
   camera: {
     flex: 1,
   },
@@ -351,6 +354,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignSelf: 'flex-end',
     alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
   },
   text: {
     fontSize: 24,
@@ -406,5 +412,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  labelModalText: {
+    color: '#000000',
+  }
 });
 
